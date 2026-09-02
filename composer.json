@@ -1,0 +1,88 @@
+{
+    "name": "goldnead/statamic-assessments",
+    "description": "Assessments for Statamic: a questionnaire with points per answer and result levels by score. The result becomes a contact event and an automation trigger.",
+    "type": "statamic-addon",
+    "license": "proprietary",
+    "keywords": [
+        "statamic",
+        "statamic-addon",
+        "assessment",
+        "quiz",
+        "scoring",
+        "lead-qualification"
+    ],
+    "authors": [
+        {
+            "name": "Adrian Goldner",
+            "email": "info@adriangoldner.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/goldnead/statamic-assessments/issues",
+        "source": "https://github.com/goldnead/statamic-assessments"
+    },
+    "require": {
+        "php": "^8.2",
+        "goldnead/statamic-brand-context": "^1.8",
+        "laravel/framework": "^12.40|^13.0",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.0 || ^12.0"
+    },
+    "suggest": {
+        "goldnead/statamic-leadhub": "Turns a completed assessment into a contact and writes the result onto its timeline.",
+        "goldnead/statamic-automations": "Adds the trigger 'Assessment completed', filterable by assessment and result level."
+    },
+    "autoload": {
+        "psr-4": {
+            "Goldnead\\Assessments\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Goldnead\\Assessments\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Assessments",
+            "description": "A questionnaire with points per answer and result levels by score.",
+            "url": "https://github.com/goldnead/statamic-assessments",
+            "developer": "Adrian Goldner",
+            "developer-url": "https://gldnr.studio"
+        },
+        "laravel": {
+            "providers": [
+                "Goldnead\\Assessments\\ServiceProvider"
+            ],
+            "aliases": {
+                "Assessments": "Goldnead\\Assessments\\Facades\\Assessments"
+            }
+        }
+    },
+    "scripts": {
+        "test": [
+            "@php vendor/bin/phpunit"
+        ],
+        "lint": [
+            "@php vendor/bin/pint --test"
+        ],
+        "analyse": [
+            "@php vendor/bin/phpstan analyse"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true,
+            "php-http/discovery": true,
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

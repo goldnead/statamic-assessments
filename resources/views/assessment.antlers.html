@@ -1,0 +1,85 @@
+{{#
+    The shipped questionnaire template.
+
+    Deliberately plain and deliberately present: an assessment that renders
+    nothing until somebody has written a template never gets tried out. Publish
+    the views (`php artisan vendor:publish --tag=assessments-views`) or draw the
+    form on any page with `{{ assessments:form handle="…" }}`.
+
+    Everything is available flat (`questions`, `action`, …) and under
+    `assessment:` — the second shape is the one to read on a site's own page,
+    where flat names could collide with the entry's fields.
+#}}
+{{ if styles }}{{ partial:assessments::styles }}{{ /if }}
+
+<div class="assessment" data-assessment="{{ handle }}">
+    <header class="assessment__head">
+        <h1>{{ title }}</h1>
+        {{ if intro }}<div class="assessment__intro">{{ intro | markdown }}</div>{{ /if }}
+        {{ if preview }}<p class="assessment__preview">{{ trans key="assessments::messages.preview_notice" }}</p>{{ /if }}
+    </header>
+
+    {{ if errors }}
+        <div class="assessment__errors" role="alert">
+            <ul>{{ errors }}<li>{{ value }}</li>{{ /errors }}</ul>
+        </div>
+    {{ /if }}
+
+    <form method="POST" action="{{ action }}" class="assessment__form"{{ if preview }} data-preview{{ /if }}>
+        {{ csrf_field }}
+        <input type="hidden" name="_visit" value="{{ visit_token }}">
+        <div class="assessment__hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+        <ol class="assessment__questions">
+            {{ questions }}
+                <li class="assessment__question" data-type="{{ type }}">
+                    <fieldset>
+                        <legend>{{ text }}</legend>
+                        {{ if help }}<p class="assessment__help">{{ help }}</p>{{ /if }}
+
+                        {{ if is_single }}
+                            {{ options }}
+                                <label class="assessment__option">
+                                    <input type="radio" name="{{ field }}" value="{{ index }}" required{{ if checked }} checked{{ /if }}>
+                                    <span>{{ label }}</span>
+                                </label>
+                            {{ /options }}
+                        {{ elseif is_multi }}
+                            {{ options }}
+                                <label class="assessment__option">
+                                    <input type="checkbox" name="{{ field }}[]" value="{{ index }}"{{ if checked }} checked{{ /if }}>
+                                    <span>{{ label }}</span>
+                                </label>
+                            {{ /options }}
+                        {{ elseif is_scale }}
+                            <div class="assessment__scale">
+                                {{ steps }}
+                                    <label class="assessment__step">
+                                        <input type="radio" name="{{ field }}" value="{{ value }}" required{{ if checked }} checked{{ /if }}>
+                                        <span>{{ value }}</span>
+                                    </label>
+                                {{ /steps }}
+                            </div>
+                        {{ /if }}
+                    </fieldset>
+                </li>
+            {{ /questions }}
+        </ol>
+
+        <div class="assessment__contact">
+            {{ if ask_name }}
+                <label class="assessment__field">
+                    <span>{{ trans key="assessments::messages.field_name" }}{{ if !name_required }} <em>{{ trans key="assessments::messages.optional" }}</em>{{ /if }}</span>
+                    <input type="text" name="name" value="{{ old:name }}" autocomplete="name"{{ if name_required }} required{{ /if }}>
+                </label>
+            {{ /if }}
+            <label class="assessment__field">
+                <span>{{ trans key="assessments::messages.field_email" }}</span>
+                <input type="email" name="email" value="{{ old:email }}" autocomplete="email" required>
+            </label>
+            <p class="assessment__note">{{ trans key="assessments::messages.email_note" }}</p>
+        </div>
+
+        <button type="submit" class="assessment__submit">{{ trans key="assessments::messages.submit" }}</button>
+    </form>
+</div>

@@ -1,0 +1,28 @@
+{{#
+    The fallback shell. Used only when the site has no layout of the name in
+    `config('assessments.layout')` — a fresh install sees a working page before
+    anybody has written one. Publish the views to replace it.
+#}}
+<!DOCTYPE html>
+<html lang="{{ site:short_locale ?? 'en' }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ assessment:title ?? title }}</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            margin: 0; padding: 3rem 1.25rem; line-height: 1.6;
+            background: Canvas; color: CanvasText;
+        }
+        main { max-width: 40rem; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <main>
+        {{ template_content }}
+    </main>
+</body>
+</html>

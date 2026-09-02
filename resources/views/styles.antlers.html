@@ -1,0 +1,50 @@
+{{#
+    The shipped styling, inline so nothing has to be published. Every value is
+    a custom property; a site restyles the form by setting six variables on
+    `.assessment` and keeps the markup. Turn it off with `styles => false`.
+#}}
+<style>
+.assessment {
+    --as-accent: #1f2937;
+    --as-border: rgba(127, 127, 127, .35);
+    --as-muted: rgba(127, 127, 127, .9);
+    --as-radius: .5rem;
+    --as-gap: 1.25rem;
+    --as-font-size: 1rem;
+    font-size: var(--as-font-size);
+    line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) { .assessment { --as-accent: #e5e7eb; } }
+.assessment h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 .75rem; }
+.assessment__intro, .assessment__text, .assessment__outro { margin-bottom: var(--as-gap); }
+.assessment__preview { font-size: .85em; color: var(--as-muted); border: 1px dashed var(--as-border); padding: .5rem .75rem; border-radius: var(--as-radius); }
+.assessment__errors { border: 1px solid #b91c1c; color: #b91c1c; border-radius: var(--as-radius); padding: .75rem 1rem; margin-bottom: var(--as-gap); }
+.assessment__errors ul { margin: 0; padding-left: 1.25rem; }
+.assessment__hp { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+.assessment__questions { list-style: none; padding: 0; margin: 0; counter-reset: q; }
+.assessment__question { counter-increment: q; border-top: 1px solid var(--as-border); padding: var(--as-gap) 0; }
+.assessment__question fieldset { border: 0; padding: 0; margin: 0; }
+.assessment__question legend { font-weight: 600; padding: 0; margin-bottom: .5rem; }
+.assessment__question legend::before { content: counter(q) ". "; color: var(--as-muted); font-weight: 400; }
+.assessment__help { color: var(--as-muted); font-size: .9em; margin: -.25rem 0 .75rem; }
+.assessment__option { display: flex; gap: .6rem; align-items: baseline; padding: .35rem 0; cursor: pointer; }
+.assessment__scale { display: flex; flex-wrap: wrap; gap: .4rem; }
+.assessment__step { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem; border: 1px solid var(--as-border); border-radius: var(--as-radius); cursor: pointer; }
+.assessment__step input { position: absolute; opacity: 0; width: 0; height: 0; }
+.assessment__step:has(input:checked) { background: var(--as-accent); color: Canvas; border-color: var(--as-accent); }
+.assessment__step:focus-within { outline: 2px solid var(--as-accent); outline-offset: 2px; }
+.assessment__contact { border-top: 1px solid var(--as-border); padding-top: var(--as-gap); display: grid; gap: .9rem; }
+.assessment__field { display: grid; gap: .3rem; }
+.assessment__field em { font-style: normal; color: var(--as-muted); font-size: .85em; }
+.assessment__field input { font: inherit; padding: .6rem .75rem; border: 1px solid var(--as-border); border-radius: var(--as-radius); background: transparent; color: inherit; }
+.assessment__note { color: var(--as-muted); font-size: .85em; margin: 0; }
+.assessment__submit { margin-top: var(--as-gap); font: inherit; font-weight: 600; padding: .75rem 1.5rem; border-radius: var(--as-radius); border: 1px solid var(--as-accent); background: var(--as-accent); color: Canvas; cursor: pointer; }
+.assessment__kicker { color: var(--as-muted); margin: 0 0 .25rem; font-size: .9em; }
+.assessment__score { color: var(--as-muted); margin: 0 0 var(--as-gap); }
+.assessment__answers { border-top: 1px solid var(--as-border); padding-top: 1rem; }
+.assessment__answers summary { cursor: pointer; color: var(--as-muted); }
+.assessment__answers ol { padding-left: 1.25rem; }
+.assessment__answers li { padding: .3rem 0; }
+.assessment__a { color: var(--as-muted); }
+.assessment__a::before { content: " — "; }
+</style>

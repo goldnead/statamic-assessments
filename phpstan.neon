@@ -1,0 +1,28 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+
+    # A project-local cache. PHPStan's default temp directory is shared across
+    # every project on the machine.
+    tmpDir: .phpstan
+
+    paths:
+        - src
+        - config
+        - routes
+
+    treatPhpDocTypesAsCertain: false
+
+    # Corrects a wrong annotation in Statamic itself, see the stub for why.
+    stubFiles:
+        - phpstan/AddonServiceProvider.stub
+
+    # The automations addon is a `suggest`, not a `require`: the trigger under
+    # src/Integrations/Automations/Triggers implements its contract, and it is
+    # not in vendor. Scanned from the test stand-in — the same declarations —
+    # so the trigger is checked against the real signatures instead of being
+    # reported as unknown. Scanned, not analysed: the file is not shipped code.
+    scanFiles:
+        - tests/Fakes/automations-contracts.php

@@ -1,0 +1,24 @@
+{{#
+    The shipped result template. Same variables as `{{ assessments:result }}`.
+#}}
+{{ if styles }}{{ partial:assessments::styles }}{{ /if }}
+
+<div class="assessment assessment--result" data-assessment="{{ handle }}" data-level="{{ result_key }}">
+    <header class="assessment__head">
+        <p class="assessment__kicker">{{ title }}</p>
+        <h1>{{ if result_label }}{{ result_label }}{{ else }}{{ trans key="assessments::messages.result_title" }}{{ /if }}</h1>
+        <p class="assessment__score">{{ score }} {{ trans key="assessments::messages.points" }}</p>
+    </header>
+
+    {{ if result_text }}<div class="assessment__text">{{ result_text | markdown }}</div>{{ /if }}
+    {{ if outro }}<div class="assessment__outro">{{ outro | markdown }}</div>{{ /if }}
+
+    <details class="assessment__answers">
+        <summary>{{ trans key="assessments::messages.your_answers" }}</summary>
+        <ol>
+            {{ answers }}
+                <li><span class="assessment__q">{{ question }}</span> <span class="assessment__a">{{ answer }}</span></li>
+            {{ /answers }}
+        </ol>
+    </details>
+</div>
