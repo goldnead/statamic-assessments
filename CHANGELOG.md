@@ -2,39 +2,34 @@
 
 ## 0.1.0 — 2026-09-02
 
-Erste Fassung. Ein Fragebogen mit Punkten je Antwort und Ergebnisstufen nach Punktsumme; das
-Ergebnis wird ein Kontakt-Ereignis und ein Automations-Auslöser. Kein Zertifikat, kein
-Datei-Upload, kein Kurs nötig.
+First cut. A questionnaire with points per answer and result levels by score; the result becomes a
+contact event and an automation trigger. No certificate, no file upload, no course required.
 
-### Was drin ist
+### Added
 
-- **Drei Fragetypen.** `single` (Punkte der gewählten Option), `multi` (Summe der gewählten
-  Optionen), `scale` (Wert × Punkte je Schritt). Jede Frage ist Pflicht; eine ausgelassene Frage
-  zählt nicht still als null.
-- **Ergebnisstufen** als lückenlose Bereiche `min`–`max`, inklusive an beiden Enden. Der Server
-  lehnt Überschneidungen und Lücken immer ab; dass die Stufen den erreichbaren Bereich ganz
-  abdecken, erst beim Veröffentlichen. Je Stufe optional eine Weiterleitung statt der
-  Ergebnisseite.
-- **Öffentliche Seiten** unter `/a/{handle}` (Formular, `assessment.antlers.html`) und
-  `/a/{handle}/r/{token}` (Ergebnis, `result.antlers.html`), im Layout der Site, mit einer
-  eigenen Hülle als Rückfall. Beide Templates veröffentlichbar. `POST …/submit` mit CSRF und
-  Drossel (`20,1`), Honeypot `website`, Vorschau eines unveröffentlichten Assessments nur für
-  Redakteure.
-- **Tags** `{{ assessments:url }}`, `{{ assessments:form }} … {{ /assessments:form }}` und
-  `{{ assessments:result }} … {{ /assessments:result }}` für Seiten, die das Formular selbst
-  zeichnen.
-- **Ereignis** `AssessmentCompleted`. Mit `statamic-leadhub` wird die Adresse ein Kontakt **ohne
-  Einwilligung**, das Ergebnis ein Timeline-Ereignis `assessment.completed` mit `score`,
-  `result_key`, `result_label` und den Antworten. Mit `statamic-automations` gibt es den
-  Auslöser `assessments.completed`, filterbar nach Assessment und Stufe.
-- **Control Panel** unter Werkzeuge → Assessments: Liste, Editor mit Fragen- und
-  Stufen-Editor, Antworten je Assessment mit CSV-Export. Berechtigungen `view assessments`,
-  `edit assessments`, `view assessment responses`. Deutsch und Englisch, heller und dunkler
-  Modus.
-- **Markenbezogen** über `statamic-brand-context`; die Kennung ist über alle Marken eindeutig,
-  damit die öffentliche Adresse eindeutig bleibt.
-- **Antworten bleiben lesbar.** Jede Response hält einen Schnappschuss `answers_readable`
-  (Fragetext, gewählte Optionen, Punkte) vom Zeitpunkt des Absendens; der Editor aktualisiert
-  Fragen per `id` statt sie zu ersetzen. Der Ergebnis-Token entsteht nur serverseitig, die
-  Ergebnisseite zeigt keine Adresse, der CSV-Export entschärft Formel-Zellen, dieselbe Adresse
-  darf mehrfach antworten (jede Antwort ein Ereignis).
+- **Three question types.** `single` (the chosen option's points), `multi` (the sum of the chosen
+  options), `scale` (value × points per step). Every question is required; a skipped one is never
+  quietly counted as zero.
+- **Result levels** as gapless `min`–`max` ranges, inclusive at both ends. The server refuses
+  overlaps and gaps always; that the levels cover the whole achievable range, only on publishing.
+  Each level may redirect instead of showing the result page.
+- **Public pages** at `/a/{handle}` (the form, `assessment.antlers.html`) and `/a/{handle}/r/{token}`
+  (the result, `result.antlers.html`), inside the site's layout, with a shell of their own as a
+  fallback. Both templates are publishable. `POST …/submit` with CSRF and a throttle (`20,1`),
+  honeypot `website`, and a preview of an unpublished assessment for editors only.
+- **Tags** `{{ assessments:url }}`, `{{ assessments:form }} … {{ /assessments:form }}` and
+  `{{ assessments:result }} … {{ /assessments:result }}` for pages that draw the form themselves.
+- **Event** `AssessmentCompleted`. With `statamic-leadhub` the address becomes a contact **without
+  consent** and the result a timeline event `assessment.completed` carrying `score`, `result_key`,
+  `result_label` and the answers. With `statamic-automations` there is the trigger
+  `assessments.completed`, filterable by assessment and level.
+- **Control Panel** under Tools → Assessments: listing, editor with a question and a level editor,
+  responses per assessment with CSV export. Permissions `view assessments`, `edit assessments`,
+  `view assessment responses`. German and English, light and dark mode.
+- **Brand-scoped** through `statamic-brand-context`; the handle is unique across all brands, so the
+  public address stays unambiguous.
+- **Answers stay readable.** Every response holds an `answers_readable` snapshot (question text,
+  chosen options, points) from the moment it was submitted; the editor updates questions by `id`
+  rather than replacing them. The result token is only ever made server-side, the result page shows
+  no address, the CSV export defuses formula cells, and the same address may answer more than once
+  (each answer an event of its own).
