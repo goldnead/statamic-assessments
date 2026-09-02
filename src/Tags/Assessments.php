@@ -5,7 +5,6 @@ namespace Goldnead\Assessments\Tags;
 use Goldnead\Assessments\AssessmentsManager;
 use Goldnead\Assessments\Models\Response;
 use Goldnead\Assessments\Support\Page;
-use Illuminate\Support\Str;
 use Statamic\Tags\Tags;
 
 /**
@@ -16,7 +15,7 @@ use Statamic\Tags\Tags;
  *
  * {{ assessments:form handle="stimm-check" }} … {{ /assessments:form }}
  *     — the same variables the shipped template gets (`questions`, `action`,
- *       `visit_token`, `ask_name` …), for a page that draws the form itself.
+ *       `ask_name` …), flat, for a page that draws the form itself.
  *
  * {{ assessments:result }} … {{ /assessments:result }}
  *     — the result for a token, from the `token` parameter or the URL's
@@ -41,7 +40,7 @@ class Assessments extends Tags
             return $this->parseNoResults();
         }
 
-        return $this->parse(Page::formContext($assessment, Str::random(40)));
+        return $this->parse(Page::formContext($assessment));
     }
 
     public function result(): array|string

@@ -7,7 +7,6 @@ use Goldnead\Assessments\Models\Assessment;
 use Goldnead\Assessments\Models\Response;
 use Goldnead\Assessments\Support\Page;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 /**
  * The public side: the questionnaire, and the result afterwards.
@@ -31,7 +30,7 @@ class AssessmentController
 
         return Page::render(
             'assessments::assessment',
-            Page::formContext($assessment, Str::random(40), $preview)
+            Page::formContext($assessment, $preview)
         );
     }
 

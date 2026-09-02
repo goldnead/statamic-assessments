@@ -149,6 +149,9 @@ class AssessmentController extends Controller
             'collect' => ['nullable', 'array'],
             'collect.name' => ['nullable', Rule::in(['off', 'optional', 'required'])],
             'questions' => ['array'],
+            // The id of an existing question, so a save keeps it — and with
+            // it the key every stored response uses. New questions send none.
+            'questions.*.id' => ['nullable', 'integer'],
             'questions.*.text' => ['required', 'string', 'max:2000'],
             'questions.*.help' => ['nullable', 'string', 'max:2000'],
             'questions.*.type' => ['required', Rule::in(Question::TYPES)],
@@ -263,6 +266,7 @@ class AssessmentController extends Controller
             'collect' => ['name' => $assessment->nameMode()],
             'scoring' => $assessment->levels()->all(),
             'questions' => $assessment->questions->map(fn (Question $question) => [
+                'id' => $question->id,
                 'text' => $question->text,
                 'help' => $question->help,
                 'type' => $question->type,

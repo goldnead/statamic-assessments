@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $email
  * @property string|null $name
  * @property array<int|string, mixed> $answers
+ * @property list<array{question: string, type: string, answer: string, points: int}>|null $answers_readable
  * @property int $score
  * @property string|null $result_key
  * @property int|null $contact_id
@@ -39,6 +40,7 @@ class Response extends Model
 
     protected $casts = [
         'answers' => 'array',
+        'answers_readable' => 'array',
         'score' => 'integer',
         'created_at' => 'datetime',
     ];

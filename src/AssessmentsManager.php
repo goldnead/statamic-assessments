@@ -104,12 +104,17 @@ class AssessmentsManager
      * Store a completed questionnaire and say so.
      *
      * The answers are expected validated — the controller does that against
-     * the questions — and are stored as given, keyed by question id, so a
-     * response can be read back without the scorer.
+     * the questions — and are stored twice: as given, keyed by question id,
+     * and as the visitor read them (`answers_readable`), so a question edited
+     * or replaced later does not blank an older result.
+     *
+     * The token is minted here and nowhere else. A client-supplied token would
+     * let a second submit collide with the first, and the URL it ends up in
+     * is the one thing about a response that has to be unguessable.
      *
      * @param  array<int|string, mixed>  $answers
      */
-    public function submit(Assessment $assessment, string $email, ?string $name, array $answers, ?string $visitToken = null): Response
+    public function submit(Assessment $assessment, string $email, ?string $name, array $answers): Response
     {
         $assessment->loadMissing('questions');
 
@@ -122,9 +127,10 @@ class AssessmentsManager
             'email' => mb_strtolower(trim($email)),
             'name' => $name !== null && trim($name) !== '' ? trim($name) : null,
             'answers' => $answers,
+            'answers_readable' => $this->readable($assessment, $answers),
             'score' => $result['score'],
             'result_key' => $level['key'] ?? null,
-            'visit_token' => $visitToken ?: Str::random(40),
+            'visit_token' => Str::random(40),
             'created_at' => now(),
         ]);
 
@@ -139,19 +145,33 @@ class AssessmentsManager
      * The answers of a response, readable: the question, the chosen labels,
      * the points. For the result page, the CSV and the contact timeline.
      *
+     * From the snapshot taken at submit time when there is one; computed
+     * against the current questions only for rows written before the
+     * snapshot existed.
+     *
      * @return list<array{question: string, type: string, answer: string, points: int}>
      */
     public function readableAnswers(Response $response): array
     {
-        $assessment = $response->assessment;
+        if (is_array($response->answers_readable) && $response->answers_readable !== []) {
+            return $response->answers_readable;
+        }
+
+        return $this->readable($response->assessment, $response->answers ?? []);
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $answers
+     * @return list<array{question: string, type: string, answer: string, points: int}>
+     */
+    protected function readable(Assessment $assessment, array $answers): array
+    {
         $assessment->loadMissing('questions');
 
         $rows = [];
 
         // PHP normalises numeric string keys to integers, so one lookup by
         // the string form finds the key however it was stored.
-        $answers = $response->answers ?? [];
-
         foreach ($assessment->questions as $question) {
             $answer = $answers[(string) $question->id] ?? null;
             $options = $question->optionList();
@@ -177,17 +197,19 @@ class AssessmentsManager
     }
 
     /**
-     * Rewrite the questions of an assessment from a list. Positions follow
-     * list order; ids are not preserved, which is fine because a response
-     * stores what it was answered against by id and an edited question is a
-     * different question.
+     * Write the questions of an assessment from a list.
+     *
+     * An entry carrying the `id` of one of the assessment's questions updates
+     * that row, so its id — the key every stored response uses — survives
+     * the save. Entries without an id are created; questions the list no
+     * longer names are deleted. Positions follow list order.
      *
      * @param  iterable<mixed>  $questions
      */
     protected function replaceQuestions(Assessment $assessment, iterable $questions): void
     {
-        $assessment->questions()->delete();
-
+        $existing = $assessment->questions()->get()->keyBy('id');
+        $kept = [];
         $position = 0;
 
         foreach ($questions as $question) {
@@ -201,7 +223,14 @@ class AssessmentsManager
                 throw new InvalidArgumentException("Unknown question type [{$type}].");
             }
 
-            $assessment->questions()->create([
+            $min = (int) ($question['min'] ?? 0);
+            $max = (int) ($question['max'] ?? 10);
+
+            if ($type === Question::TYPE_SCALE && $min >= $max) {
+                throw new InvalidArgumentException("A scale has to end above where it starts ({$min}–{$max}).");
+            }
+
+            $attributes = [
                 'position' => $position++,
                 'text' => (string) ($question['text'] ?? ''),
                 'help' => isset($question['help']) && $question['help'] !== '' ? (string) $question['help'] : null,
@@ -213,11 +242,24 @@ class AssessmentsManager
                     ],
                     (array) ($question['options'] ?? [])
                 )),
-                'min' => $type === Question::TYPE_SCALE ? (int) ($question['min'] ?? 0) : null,
-                'max' => $type === Question::TYPE_SCALE ? (int) ($question['max'] ?? 10) : null,
+                'min' => $type === Question::TYPE_SCALE ? $min : null,
+                'max' => $type === Question::TYPE_SCALE ? $max : null,
                 'points_per_step' => $type === Question::TYPE_SCALE ? (int) ($question['points_per_step'] ?? 1) : null,
-            ]);
+            ];
+
+            $id = isset($question['id']) && is_numeric($question['id']) ? (int) $question['id'] : null;
+
+            if ($id !== null && $existing->has($id)) {
+                $existing[$id]->fill($attributes)->save();
+                $kept[] = $id;
+
+                continue;
+            }
+
+            $kept[] = $assessment->questions()->create($attributes)->id;
         }
+
+        $assessment->questions()->whereNotIn('id', $kept)->delete();
 
         $assessment->unsetRelation('questions');
     }

@@ -1,24 +1,26 @@
 {{#
-    The shipped result template. Same variables as `{{ assessments:result }}`.
+    The shipped result template. Same variables as `{{ assessments:result }}`,
+    here under `assessment:`. The URL this renders at is permanent and may be
+    passed around, which is why the address is not among them.
 #}}
-{{ if styles }}{{ partial:assessments::styles }}{{ /if }}
+{{ if assessment:styles }}{{ partial:assessments::styles }}{{ /if }}
 
-<div class="assessment assessment--result" data-assessment="{{ handle }}" data-level="{{ result_key }}">
+<div class="assessment assessment--result" data-assessment="{{ assessment:handle }}" data-level="{{ assessment:result_key }}">
     <header class="assessment__head">
-        <p class="assessment__kicker">{{ title }}</p>
-        <h1>{{ if result_label }}{{ result_label }}{{ else }}{{ trans key="assessments::messages.result_title" }}{{ /if }}</h1>
-        <p class="assessment__score">{{ score }} {{ trans key="assessments::messages.points" }}</p>
+        <p class="assessment__kicker">{{ assessment:title }}</p>
+        <h1>{{ if assessment:result_label }}{{ assessment:result_label }}{{ else }}{{ trans key="assessments::messages.result_title" }}{{ /if }}</h1>
+        <p class="assessment__score">{{ assessment:score }} {{ trans key="assessments::messages.points" }}</p>
     </header>
 
-    {{ if result_text }}<div class="assessment__text">{{ result_text | markdown }}</div>{{ /if }}
-    {{ if outro }}<div class="assessment__outro">{{ outro | markdown }}</div>{{ /if }}
+    {{ if assessment:result_text }}<div class="assessment__text">{{ assessment:result_text | markdown }}</div>{{ /if }}
+    {{ if assessment:outro }}<div class="assessment__outro">{{ assessment:outro | markdown }}</div>{{ /if }}
 
     <details class="assessment__answers">
         <summary>{{ trans key="assessments::messages.your_answers" }}</summary>
         <ol>
-            {{ answers }}
+            {{ assessment:answers }}
                 <li><span class="assessment__q">{{ question }}</span> <span class="assessment__a">{{ answer }}</span></li>
-            {{ /answers }}
+            {{ /assessment:answers }}
         </ol>
     </details>
 </div>

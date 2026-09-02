@@ -193,6 +193,91 @@ class CpTest extends TestCase
     }
 
     #[Test]
+    public function saving_the_editor_keeps_the_question_ids_and_older_responses_stay_readable(): void
+    {
+        $assessment = $this->makeAssessment();
+        $response = Assessments::submit($assessment, 'a@example.com', 'A', $this->validAnswers($assessment));
+        $idsBefore = $assessment->questions()->pluck('id')->all();
+
+        $this->actingAsCpUser('editor@example.com', ['view assessments', 'edit assessments']);
+
+        // What the editor sends back: the questions as the edit page handed
+        // them over, ids included, one text changed, one option added, and a
+        // new question at the end.
+        $page = $this->get(cp_route('assessments.edit', $assessment->id))->assertOk();
+        $questions = $page->inertiaPage()['props']['assessment']['questions'];
+        $questions[0]['text'] = 'Wie oft singst du wirklich?';
+        $questions[0]['options'][] = ['label' => 'Ständig', 'points' => 3];
+        $questions[] = ['text' => 'Neu', 'type' => 'single', 'options' => [['label' => 'a', 'points' => 0], ['label' => 'b', 'points' => 1]]];
+
+        $this->patch(cp_route('assessments.update', $assessment->id), array_merge($this->payload(), [
+            'questions' => $questions,
+            'scoring' => [
+                ['key' => 'anfang', 'label' => 'Am Anfang', 'min' => 2, 'max' => 8],
+                ['key' => 'weit', 'label' => 'Weit', 'min' => 9, 'max' => 17],
+            ],
+        ]))->assertRedirect()->assertSessionHasNoErrors();
+
+        $assessment->refresh()->load('questions');
+
+        // The three original ids survive, in order; one new id follows.
+        $this->assertSame($idsBefore, array_slice($assessment->questions->pluck('id')->all(), 0, 3));
+        $this->assertCount(4, $assessment->questions);
+        $this->assertSame('Wie oft singst du wirklich?', $assessment->questions[0]->text);
+
+        // The stored response still reads: its keys still exist, and the
+        // snapshot shows what the visitor was shown at the time.
+        $readable = Assessments::readableAnswers($response->fresh(['assessment']));
+
+        $this->assertCount(3, $readable);
+        $this->assertSame('Wie oft singst du?', $readable[0]['question']);
+        $this->assertSame('Täglich', $readable[0]['answer']);
+        $this->assertSame('Atmung, Register', $readable[1]['answer']);
+    }
+
+    #[Test]
+    public function a_response_stays_readable_even_when_every_question_is_replaced(): void
+    {
+        $assessment = $this->makeAssessment();
+        $response = Assessments::submit($assessment, 'a@example.com', 'A', $this->validAnswers($assessment));
+
+        // No ids at all: every question is a new row, the old ones are gone.
+        Assessments::update($assessment, ['questions' => [
+            ['text' => 'Ganz neu', 'type' => 'single', 'options' => [['label' => 'x', 'points' => 2], ['label' => 'y', 'points' => 15]]],
+        ]]);
+
+        $readable = Assessments::readableAnswers($response->fresh(['assessment']));
+
+        $this->assertSame(['Wie oft singst du?', 'Was übst du?', 'Wie sicher fühlst du dich in der Höhe?'], array_column($readable, 'question'));
+        $this->assertSame(['Täglich', 'Atmung, Register', '5'], array_column($readable, 'answer'));
+
+        $this->actingAsCpUser('reader@example.com', ['view assessments', 'view assessment responses']);
+
+        $this->assertStringContainsString(';15;weit;Weit;Täglich;"Atmung, Register";5', $this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent());
+        $this->get('/a/stimm_check/r/'.$response->visit_token)->assertOk()->assertSee('Täglich');
+    }
+
+    #[Test]
+    public function the_csv_neutralises_cells_a_spreadsheet_would_execute(): void
+    {
+        $assessment = $this->makeAssessment();
+        Assessments::submit($assessment, 'a@example.com', '=HYPERLINK("https://evil.example","klick")', $this->validAnswers($assessment));
+        Assessments::submit($assessment, 'b@example.com', '+49 170', $this->validAnswers($assessment));
+        Assessments::submit($assessment, 'c@example.com', '-1', $this->validAnswers($assessment));
+        Assessments::submit($assessment, 'd@example.com', '@mention', $this->validAnswers($assessment));
+
+        $this->actingAsCpUser('reader@example.com', ['view assessments', 'view assessment responses']);
+
+        $body = $this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent();
+
+        $this->assertStringContainsString('a@example.com;"\'=HYPERLINK(""https://evil.example"",""klick"")";', $body);
+        $this->assertStringContainsString('b@example.com;"\'+49 170";', $body);
+        $this->assertStringContainsString("c@example.com;'-1;", $body);
+        $this->assertStringContainsString("d@example.com;'@mention;", $body);
+        $this->assertStringNotContainsString(';=HYPERLINK', $body);
+    }
+
+    #[Test]
     public function the_responses_page_and_the_csv_export_list_every_response(): void
     {
         $assessment = $this->makeAssessment();

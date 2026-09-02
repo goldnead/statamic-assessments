@@ -33,3 +33,8 @@ Datei-Upload, kein Kurs nötig.
   Modus.
 - **Markenbezogen** über `statamic-brand-context`; die Kennung ist über alle Marken eindeutig,
   damit die öffentliche Adresse eindeutig bleibt.
+- **Antworten bleiben lesbar.** Jede Response hält einen Schnappschuss `answers_readable`
+  (Fragetext, gewählte Optionen, Punkte) vom Zeitpunkt des Absendens; der Editor aktualisiert
+  Fragen per `id` statt sie zu ersetzen. Der Ergebnis-Token entsteht nur serverseitig, die
+  Ergebnisseite zeigt keine Adresse, der CSV-Export entschärft Formel-Zellen, dieselbe Adresse
+  darf mehrfach antworten (jede Antwort ein Ereignis).

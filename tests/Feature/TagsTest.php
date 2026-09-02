@@ -38,23 +38,22 @@ class TagsTest extends TestCase
     {
         $this->makeAssessment();
 
-        $html = $this->render('{{ assessments:form handle="stimm_check" }}<form action="{{ action }}">{{ questions }}<p>{{ text }}</p>{{ /questions }}<i>{{ visit_token }}</i></form>{{ /assessments:form }}');
+        $html = $this->render('{{ assessments:form handle="stimm_check" }}<form action="{{ action }}">{{ questions }}<p>{{ text }}</p>{{ /questions }}</form>{{ /assessments:form }}');
 
         $this->assertStringContainsString('action="http://localhost/a/stimm_check/submit"', $html);
         $this->assertStringContainsString('<p>Wie oft singst du?</p>', $html);
         $this->assertStringContainsString('<p>Wie sicher fühlst du dich in der Höhe?</p>', $html);
-        $this->assertMatchesRegularExpression('/<i>[A-Za-z0-9]{40}<\/i>/', $html);
     }
 
     #[Test]
     public function the_result_tag_reads_the_token_and_says_nothing_without_one(): void
     {
         $assessment = $this->makeAssessment();
-        $response = Assessments::submit($assessment, 'sing@example.com', null, $this->validAnswers($assessment), 'abcdefghijklmnopqrstuvwxyz0123456789');
+        $response = Assessments::submit($assessment, 'sing@example.com', null, $this->validAnswers($assessment));
 
-        $template = '{{ assessments:result token="'.$response->visit_token.'" }}{{ result_label }}/{{ score }}{{ /assessments:result }}';
+        $template = '{{ assessments:result token="'.$response->visit_token.'" }}{{ result_label }}/{{ score }}/{{ email }}{{ /assessments:result }}';
 
-        $this->assertSame('Weit/15', $this->render($template));
+        $this->assertSame('Weit/15/', $this->render($template));
         $this->assertSame('', $this->render('{{ assessments:result token="ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" }}{{ result_label }}{{ /assessments:result }}'));
         $this->assertSame('', $this->render('{{ assessments:result }}{{ result_label }}{{ /assessments:result }}'));
     }

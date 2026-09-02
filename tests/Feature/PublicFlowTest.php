@@ -4,6 +4,7 @@ namespace Goldnead\Assessments\Tests\Feature;
 
 use Goldnead\Assessments\Events\AssessmentCompleted;
 use Goldnead\Assessments\Models\Response;
+use Goldnead\Assessments\Support\Page;
 use Goldnead\Assessments\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,7 +26,6 @@ class PublicFlowTest extends TestCase
             ->assertSee('Stimm-Check')
             ->assertSee('Wie oft singst du?')
             ->assertSee('Wöchentlich')
-            ->assertSee('name="_visit"', false)
             ->assertSee('name="_token"', false)
             ->assertSee('/a/stimm_check/submit');
     }
@@ -59,7 +59,6 @@ class PublicFlowTest extends TestCase
         $response = $this->post('/a/stimm_check/submit', [
             'email' => 'Sing@Example.com',
             'name' => 'Sina',
-            '_visit' => 'abcdefghijklmnopqrstuvwxyz0123456789',
             'answers' => $this->validAnswers($assessment, single: 2, multi: [0, 1], scale: 5),
         ]);
 
@@ -70,18 +69,83 @@ class PublicFlowTest extends TestCase
         $this->assertSame('weit', $stored->result_key);
         $this->assertSame('sing@example.com', $stored->email);
         $this->assertSame('Sina', $stored->name);
-        $this->assertSame('abcdefghijklmnopqrstuvwxyz0123456789', $stored->visit_token);
+        $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{40}$/', $stored->visit_token);
+        $this->assertSame('Täglich', $stored->answers_readable[0]['answer']);
 
-        $response->assertRedirect('/a/stimm_check/r/abcdefghijklmnopqrstuvwxyz0123456789');
+        $response->assertRedirect('/a/stimm_check/r/'.$stored->visit_token);
 
-        $this->get('/a/stimm_check/r/abcdefghijklmnopqrstuvwxyz0123456789')
+        $this->get('/a/stimm_check/r/'.$stored->visit_token)
             ->assertOk()
             ->assertSee('Weit')
             ->assertSee('Feinschliff.')
             ->assertSee('15 points')
-            ->assertSee('Täglich');
+            ->assertSee('Täglich')
+            // The result URL is permanent and gets passed around; the address
+            // is not part of what it shows.
+            ->assertDontSee('sing@example.com');
 
         Event::assertDispatched(AssessmentCompleted::class, fn ($event) => $event->response->is($stored));
+    }
+
+    #[Test]
+    public function the_token_is_minted_on_the_server_and_a_client_token_is_ignored(): void
+    {
+        $assessment = $this->makeAssessment();
+        $payload = [
+            'email' => 'sing@example.com',
+            '_visit' => 'abcdefghijklmnopqrstuvwxyz0123456789',
+            'answers' => $this->validAnswers($assessment),
+        ];
+
+        // Twice with the same client token: before, the second one was a 500
+        // on the unique index. Now both land, each under its own token.
+        $first = $this->post('/a/stimm_check/submit', $payload)->assertRedirect();
+        $second = $this->post('/a/stimm_check/submit', $payload)->assertRedirect();
+
+        $tokens = Response::query()->pluck('visit_token')->all();
+
+        $this->assertCount(2, $tokens);
+        $this->assertNotContains('abcdefghijklmnopqrstuvwxyz0123456789', $tokens);
+        $this->assertNotSame($first->headers->get('Location'), $second->headers->get('Location'));
+    }
+
+    #[Test]
+    public function the_same_address_may_answer_more_than_once_and_each_answer_is_its_own_event(): void
+    {
+        Event::fake([AssessmentCompleted::class]);
+
+        $assessment = $this->makeAssessment();
+
+        $this->post('/a/stimm_check/submit', ['email' => 'sing@example.com', 'answers' => $this->validAnswers($assessment)])->assertRedirect();
+        $this->post('/a/stimm_check/submit', ['email' => 'sing@example.com', 'answers' => $this->validAnswers($assessment, single: 0, multi: [2], scale: 1)])->assertRedirect();
+
+        $this->assertSame([15, 2], Response::query()->orderBy('id')->pluck('score')->all());
+        Event::assertDispatchedTimes(AssessmentCompleted::class, 2);
+    }
+
+    #[Test]
+    public function the_honeypot_is_hidden_without_the_stylesheet(): void
+    {
+        config()->set('assessments.styles', false);
+        $this->makeAssessment();
+
+        $this->get('/a/stimm_check')
+            ->assertOk()
+            // No stylesheet on the page, and the honeypot still hidden.
+            ->assertDontSee('--as-accent', false)
+            ->assertSee('class="assessment__hp" hidden', false);
+    }
+
+    #[Test]
+    public function the_page_puts_only_the_title_flat_into_the_cascade(): void
+    {
+        $assessment = $this->makeAssessment();
+
+        $data = Page::render('assessments::assessment', Page::formContext($assessment))->data();
+
+        $this->assertSame(['title', 'assessment'], array_keys($data));
+        $this->assertSame('Stimm-Check', $data['title']);
+        $this->assertArrayHasKey('questions', $data['assessment']);
     }
 
     #[Test]
@@ -126,9 +190,11 @@ class PublicFlowTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['answers.'.$first]);
 
-        $this->postJson('/a/stimm_check/submit', ['email' => 'not-an-address', 'answers' => $this->validAnswers($assessment)])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email']);
+        foreach (['not-an-address', 'sing@localhost', 'sing@example', 'sing @example.com'] as $bad) {
+            $this->postJson('/a/stimm_check/submit', ['email' => $bad, 'answers' => $this->validAnswers($assessment)])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(['email']);
+        }
 
         // An option that does not exist, and a scale value off the end.
         $this->postJson('/a/stimm_check/submit', ['email' => 'sing@example.com', 'answers' => $this->validAnswers($assessment, single: 7)])
@@ -220,11 +286,12 @@ class PublicFlowTest extends TestCase
 
         $this->post('/a/stimm_check/submit', [
             'email' => 'sing@example.com',
-            '_visit' => 'abcdefghijklmnopqrstuvwxyz0123456789',
             'answers' => $this->validAnswers($assessment),
         ]);
 
-        $this->get('/a/anderes/r/abcdefghijklmnopqrstuvwxyz0123456789')->assertNotFound();
+        $token = Response::query()->sole()->visit_token;
+
+        $this->get('/a/anderes/r/'.$token)->assertNotFound();
         $this->get('/a/stimm_check/r/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ')->assertNotFound();
     }
 }

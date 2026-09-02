@@ -24,7 +24,7 @@ class Page
      *
      * @return array<string, mixed>
      */
-    public static function formContext(Assessment $assessment, string $visitToken, bool $preview = false): array
+    public static function formContext(Assessment $assessment, bool $preview = false): array
     {
         // What the visitor had chosen when a validation error sent them back,
         // resolved here so the template compares nothing itself: Antlers'
@@ -74,7 +74,6 @@ class Page
             ])->values()->all(),
             'action' => route('assessments.submit', $assessment->handle),
             'url' => route('assessments.show', $assessment->handle),
-            'visit_token' => $visitToken,
             'preview' => $preview,
             'styles' => config('assessments.styles', true),
         ];
@@ -93,7 +92,8 @@ class Page
             'handle' => $assessment->handle,
             'title' => $assessment->title,
             'outro' => $assessment->outro,
-            'email' => $response->email,
+            // Not the address. The result URL is permanent and gets passed
+            // around; whoever opens it should see a result, not whose it is.
             'name' => $response->name,
             'score' => $response->score,
             'result_key' => $level['key'] ?? null,
@@ -110,13 +110,22 @@ class Page
     }
 
     /**
+     * The whole context under one key, plus `title` for the layout's `<title>`.
+     *
+     * Nothing else goes into the cascade flat. `View::gatherData()` merges
+     * the data handed here *over* the cascade, so a flat `url` or `name`
+     * would silently overwrite the site's own variables of that name inside
+     * the layout — the funnels addon shipped exactly that bug once.
+     *
      * @param  array<string, mixed>  $context
      */
     public static function render(string $template, array $context): ViewContract|View
     {
         $layout = (string) config('assessments.layout', 'layout');
 
-        return View::make($template, ['assessment' => $context] + $context)
-            ->layout(view()->exists($layout) ? $layout : 'assessments::layout');
+        return View::make($template, [
+            'title' => $context['title'] ?? null,
+            'assessment' => $context,
+        ])->layout(view()->exists($layout) ? $layout : 'assessments::layout');
     }
 }

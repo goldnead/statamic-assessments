@@ -174,6 +174,17 @@ class ScoringTest extends TestCase
     }
 
     #[Test]
+    public function the_facade_refuses_a_scale_that_ends_where_it_starts(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('scale');
+
+        $this->makeAssessment(['published' => false, 'questions' => [
+            ['text' => 'Wie sicher?', 'type' => 'scale', 'min' => 5, 'max' => 5, 'points_per_step' => 1],
+        ]]);
+    }
+
+    #[Test]
     public function a_draft_may_leave_part_of_the_range_uncovered(): void
     {
         $assessment = $this->makeAssessment(['published' => false, 'scoring' => [

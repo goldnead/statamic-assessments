@@ -27,7 +27,10 @@ const intro = ref(props.assessment?.intro || '');
 const outro = ref(props.assessment?.outro || '');
 const published = ref(props.assessment ? !! props.assessment.published : false);
 const nameMode = ref(props.assessment?.collect?.name || 'optional');
+// `id` rides along so a save updates the question instead of replacing it:
+// every stored response keys its answers by that id.
 const questions = ref((props.assessment?.questions || []).map((q) => ({
+    id: q.id ?? null,
     text: q.text || '',
     help: q.help || '',
     type: q.type || 'single',

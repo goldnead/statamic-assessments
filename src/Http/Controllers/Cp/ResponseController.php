@@ -113,14 +113,14 @@ class ResponseController extends Controller
 
                         $answers = array_column($this->assessments->readableAnswers($response), 'answer');
 
-                        fputcsv($out, array_merge([
+                        fputcsv($out, array_map([self::class, 'cell'], array_merge([
                             $response->email,
                             $response->name,
                             $response->created_at?->toDateTimeString(),
                             $response->score,
                             $response->result_key,
                             $response->result_key ? ($levels->byKey($response->result_key)['label'] ?? '') : '',
-                        ], $answers), ';', '"', '\\');
+                        ], $answers)), ';', '"', '\\');
                     }
                 });
 
@@ -128,5 +128,25 @@ class ResponseController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * A cell a spreadsheet will not execute.
+     *
+     * Every value here was typed by a stranger — a name, an option label —
+     * and the file is opened in Excel. A cell beginning with `=`, `+`, `-`
+     * or `@` is a formula there, and `=HYPERLINK(...)` in a name is a phishing
+     * link in the editor's spreadsheet. A leading apostrophe makes it text;
+     * a tab or carriage return up front is the same trick in another coat.
+     */
+    public static function cell(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if ($value !== '' && str_contains("=+-@\t\r", $value[0])) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 }

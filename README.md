@@ -5,7 +5,17 @@ leaves an email address and sees a result right away. The result becomes a conta
 in LeadHub and a trigger in Automations, so it can set a tag, start a sequence or unlock an
 offer — the part a quiz is actually for.
 
-No certificate, no file upload, no course required. Statamic 6, PHP 8.2+, MySQL or SQLite.
+No certificate, no file upload, no course required.
+
+## Requirements
+
+| | |
+| --- | --- |
+| PHP | 8.2 or newer |
+| Statamic | 6.0 or newer |
+| Laravel | 12.40+ or 13 |
+| Database | MySQL or SQLite (three tables of its own) |
+| `goldnead/statamic-brand-context` | `^1.8`, installed alongside; invisible on a single-brand site |
 
 ## What it does
 
@@ -109,7 +119,14 @@ Assessments::readableAnswers($response);            // [['question', 'type', 'an
 ```
 
 `create()` and `update()` throw an `InvalidArgumentException` for levels that overlap or
-leave a gap, and — when `published` is on — for levels that do not cover the range.
+leave a gap, for a scale that does not end above where it starts, and — when `published`
+is on — for levels that do not cover the range.
+
+`update()` with `questions` updates a question that carries its `id`, creates one that
+does not, and deletes the ones no longer listed. Ids are what stored responses key their
+answers by, so the Control Panel sends them back on every save. On top of that every
+response keeps a snapshot of the question texts and chosen labels as they were at submit
+time, so a question rewritten or removed later never blanks an older result.
 
 ## The public side
 
@@ -122,11 +139,22 @@ leave a gap, and — when `published` is on — for levels that do not cover the
 The form posts `email`, optionally `name`, and `answers[{question_id}]`: an option index for
 single choice, a list of indexes for multiple choice, the value for a scale. Every question
 is validated against the question as it is now — an index that does not exist or a scale
-value off the end is a 422, not a zero.
+value off the end is a 422, not a zero. The address has to be a real one
+(`email:rfc,strict`, with a dot in the domain).
 
 After a submit the visitor is redirected to the result page, or to the level's redirect. A
 JSON client (`Accept: application/json`) gets `score`, `result_key`, `result_label`,
 `result_url` and `redirect` back instead.
+
+Two things about the result URL, both on purpose:
+
+- **It is permanent and shareable.** The token is 40 random characters minted on the
+  server; nothing the client sends becomes part of it. Whoever has the link sees the level,
+  the score and the answers — not the email address, which is why the address is not on
+  that page.
+- **The same address may answer as often as it likes.** Every submit is its own response,
+  its own result URL and its own `AssessmentCompleted` event. An automation that should
+  fire only once per person says so in its own enrollment policy.
 
 ### Templates
 
@@ -138,8 +166,10 @@ layout the addon's own shell is used. Publish them to change them:
 php artisan vendor:publish --tag=assessments-views
 ```
 
-Both templates get their variables flat (`questions`, `action`, …) and under `assessment:`.
-The shipped styling is a small inline stylesheet driven by custom properties on
+Both templates get their variables under `assessment:` (`assessment:questions`,
+`assessment:action`, …); only `title` is also in the cascade, for the layout's `<title>`.
+Nothing else goes in flat, so the site's own `url` or `name` inside the layout stays
+untouched. The shipped styling is a small inline stylesheet driven by custom properties on
 `.assessment`; turn it off with `styles => false` and keep the class names.
 
 ### Tags
@@ -150,7 +180,6 @@ The shipped styling is a small inline stylesheet driven by custom properties on
 {{ assessments:form handle="stimm-check" }}
     <form method="POST" action="{{ action }}">
         {{ csrf_field }}
-        <input type="hidden" name="_visit" value="{{ visit_token }}">
         {{ questions }}
             <fieldset>
                 <legend>{{ text }}</legend>
@@ -175,8 +204,9 @@ The shipped styling is a small inline stylesheet driven by custom properties on
 {{ /assessments:result }}
 ```
 
+The tag pairs hand their variables over flat, since they run inside a template of your own.
 `form` and `url` render nothing for an unpublished or unknown handle. `result` renders
-nothing without a valid token.
+nothing without a valid token, and never the email address.
 
 ## Bridges
 
@@ -204,7 +234,9 @@ first.
 | `view assessment responses` | the responses page and the CSV export |
 
 The responses page shows the latest 500; the export streams all of them, `;`-separated,
-UTF-8 with BOM, one column per question with the answer labels.
+UTF-8 with BOM, one column per question with the answer labels. A cell that starts with
+`=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'`, so a name typed as
+`=HYPERLINK(...)` opens in Excel as text rather than as a formula.
 
 ## Configuration
 
@@ -230,8 +262,9 @@ php artisan vendor:publish --tag=assessments-config
 ## Tables
 
 `assessments`, `assessment_questions`, `assessment_responses`. Responses store the answers
-by question id, the score and the level key as they were at the time — a rule edited later
-does not rewrite what somebody was told.
+by question id, a readable snapshot of them (`answers_readable`: question, chosen labels,
+points), the score and the level key as they were at the time — a rule or a question edited
+later does not rewrite what somebody was told.
 
 ## Development
 

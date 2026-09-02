@@ -11,6 +11,10 @@ use Illuminate\Support\Str;
 /**
  * The form endpoint. Opened by strangers, so it validates against the
  * questions as they are now and says as little as possible.
+ *
+ * Nothing the client sends becomes an identifier: the result token is minted
+ * on the server, and the same address may answer as often as it likes — every
+ * answer is its own response and its own event.
  */
 class SubmitController
 {
@@ -34,7 +38,6 @@ class SubmitController
             $data['email'],
             $data['name'] ?? null,
             $data['answers'] ?? [],
-            $this->visitToken($request),
         );
 
         $level = $response->level();
@@ -69,7 +72,10 @@ class SubmitController
     protected function rules(Assessment $assessment): array
     {
         $rules = [
-            'email' => ['required', 'email', 'max:191'],
+            // `strict` rejects what a mail server would; the pattern insists
+            // on a dot in the domain, which RFC-valid `name@localhost` lacks
+            // and no address that can receive a result ever has.
+            'email' => ['required', 'email:rfc,strict', 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]+$/', 'max:191'],
             'name' => [$assessment->nameMode() === 'required' ? 'required' : 'nullable', 'string', 'max:191'],
             'answers' => ['required', 'array'],
         ];
@@ -110,16 +116,5 @@ class SubmitController
         }
 
         return $attributes;
-    }
-
-    /**
-     * The token the page was rendered with, if it still looks like one. It
-     * only has to be unique; a browser sending something odd gets a fresh one.
-     */
-    protected function visitToken(Request $request): ?string
-    {
-        $token = (string) $request->input('_visit', '');
-
-        return preg_match('/^[A-Za-z0-9]{20,64}$/', $token) ? $token : null;
     }
 }

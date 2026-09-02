@@ -74,9 +74,8 @@ class MultiBrandTest extends TestCase
 
         $this->post('/a/beta_check/submit', [
             'email' => 'sing@example.com',
-            '_visit' => 'abcdefghijklmnopqrstuvwxyz0123456789',
             'answers' => $answers,
-        ])->assertRedirect('/a/beta_check/r/abcdefghijklmnopqrstuvwxyz0123456789');
+        ])->assertRedirectContains('/a/beta_check/r/');
 
         $response = Response::query()->withoutGlobalScopes()->sole();
 
@@ -84,7 +83,7 @@ class MultiBrandTest extends TestCase
 
         app('brand-context')->forget();
 
-        $this->get('/a/beta_check/r/abcdefghijklmnopqrstuvwxyz0123456789')->assertOk()->assertSee('Weit');
+        $this->get('/a/beta_check/r/'.$response->visit_token)->assertOk()->assertSee('Weit');
     }
 
     #[Test]

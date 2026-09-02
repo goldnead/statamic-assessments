@@ -33,6 +33,7 @@ function clone() {
 
 function add() {
     update([...clone(), {
+        id: null,
         text: '',
         help: '',
         type: 'single',
