@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, Link, router } from '@statamic/cms/inertia';
 import {
-    Header, Listing, Panel, Badge, Button, DropdownItem, ConfirmationModal, CommandPaletteItem,
+    Header, Listing, Alert, Badge, Button, DropdownItem, ConfirmationModal, CommandPaletteItem,
     EmptyStateMenu, EmptyStateItem, Icon,
 } from '@statamic/cms/ui';
 
@@ -72,11 +72,14 @@ function destroy() {
                 />
             </Header>
 
-            <Panel v-if="generalErrors.length" class="mb-4">
-                <div class="p-4 text-sm text-red-600 dark:text-red-400">
-                    <p v-for="(message, index) in generalErrors" :key="index">{{ message }}</p>
-                </div>
-            </Panel>
+            <!-- An error banner is an `Alert`, not a red div on a bare Panel. -->
+            <Alert
+                v-for="(message, index) in generalErrors"
+                :key="index"
+                variant="error"
+                :text="message"
+                class="mb-4"
+            />
 
             <Listing
                 :items="assessments"

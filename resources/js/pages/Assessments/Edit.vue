@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue';
 import { Head, router } from '@statamic/cms/inertia';
 import {
-    Header, Panel, Card, Button, Field, Input, Select, Textarea, Switch, ConfirmationModal,
+    Header, Panel, Card, Alert, Button, Dropdown, DropdownMenu, DropdownItem,
+    Field, Input, Select, Textarea, Switch, ConfirmationModal,
     CommandPaletteItem, Badge,
 } from '@statamic/cms/ui';
 import QuestionsEditor from '../../components/QuestionsEditor.vue';
@@ -151,21 +152,32 @@ function destroy() {
                 :text="`${__('Responses')} (${assessment.responses_count})`"
                 :href="responsesUrl"
             />
-            <Button
-                v-if="deleteUrl"
-                :text="__('Delete')"
-                variant="danger"
-                @click="showDeleteConfirm = true"
-            />
+            <!-- Core uses `danger` only as the confirm button inside a modal.
+                 A destructive page action lives in the header's "…" menu, and
+                 Dropdown renders its own dots trigger. -->
+            <Dropdown v-if="deleteUrl">
+                <DropdownMenu>
+                    <DropdownItem
+                        :text="__('Delete')"
+                        icon="trash"
+                        variant="destructive"
+                        @click="showDeleteConfirm = true"
+                    />
+                </DropdownMenu>
+            </Dropdown>
             <CommandPaletteItem :text="__('Save')" category="actions" :action="save" prioritize />
             <Button :text="__('Save')" variant="primary" :disabled="!title.trim()" @click="save" />
         </Header>
 
-        <Panel v-if="generalErrors.length" class="mb-4" data-assessments-form-errors>
-            <div class="p-4 text-sm text-red-600 dark:text-red-400">
-                <p v-for="(message, index) in generalErrors" :key="index">{{ message }}</p>
-            </div>
-        </Panel>
+        <!-- An error banner is an `Alert`, not a red div on a bare Panel. -->
+        <Alert
+            v-for="(message, index) in generalErrors"
+            :key="index"
+            variant="error"
+            :text="message"
+            class="mb-4"
+            data-assessments-form-errors
+        />
 
         <Panel :heading="__('Details')">
             <Card>
