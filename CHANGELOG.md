@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.1.1 — 2026-09-05
+
+The shipped bundle was older than the source it was meant to come from.
+
+### Fixed
+
+- **`dist/` rebuilt to match the source.** Commit `6f2ee23` (error banners as `Alert`, delete
+  moved into the header menu) changed `resources/js` and `resources/css`, but the committed
+  `dist/build` still dated from 0.1.0. A site on this commit would have run the new PHP with the
+  old JavaScript — the class of mismatch that produced "Cannot read properties of undefined" in
+  the suite on 2026-09-03. A fresh build from the committed source is byte-identical to the
+  unreviewed build that sat in the working tree; that is what is committed now.
+- **Error banners are an `Alert`, delete lives in the `…` menu.** Two error banners sat as a red
+  `div` directly on the grey panel; the delete button was a red header button rather than an entry
+  in the header menu.
+- **CI never ran.** The repository is private and the workflow declared `permissions: {}`, so
+  `actions/checkout` could not read the repository and every job failed before a single test.
+  Now `contents: read`. The `dist` job in this CI is the check that would have caught the mismatch
+  above.
+
+### Changed
+
+- **Icon and cover in the suite's handwriting.** The icon is now a scale with three level marks
+  and a needle in the third: points become a level, and only a scale shows both at once. Accent
+  is a leaf green (`#44B234` → `#246619`), the largest free gap in the suite's hue circle. A cover
+  image exists now, so the docs page has a share image.
+- **This changelog is in English**, like the READMEs, the Marketplace copy and every other
+  changelog in the suite. Content unchanged.
+
 ## 0.1.0 — 2026-09-02
 
 First cut. A questionnaire with points per answer and result levels by score; the result becomes a
