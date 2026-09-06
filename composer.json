@@ -53,7 +53,7 @@
             "description": "A questionnaire with points per answer and result levels by score.",
             "url": "https://github.com/goldnead/statamic-assessments",
             "developer": "Adrian Goldner",
-            "developer-url": "https://gldnr.studio"
+            "developer-url": "https://adriangoldner.dev"
         },
         "laravel": {
             "providers": [
