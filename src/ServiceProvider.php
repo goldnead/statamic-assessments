@@ -4,6 +4,8 @@ namespace Goldnead\Assessments;
 
 use Goldnead\Assessments\Integrations\Automations\AutomationsBridge;
 use Goldnead\Assessments\Integrations\LeadHubBridge;
+use Goldnead\Assessments\Support\Settings;
+use Goldnead\BrandContext\Settings\SettingsRegistry;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
 use Statamic\Providers\AddonServiceProvider;
@@ -59,6 +61,22 @@ class ServiceProvider extends AddonServiceProvider
         $this->app->singleton(AutomationsBridge::class);
     }
 
+    /**
+     * In `boot()`, nicht in `bootAddon()`, und das ist keine Stilfrage.
+     *
+     * brand-context legt die gespeicherten Werte aus einem `app->booted()` auf
+     * die Config, absichtlich erst dann, damit jedes Provider-`boot()` seine
+     * Anmeldung hinter sich hat. `bootAddon()` läuft selbst aus einem
+     * `app->booted()`, und welches der beiden zuerst feuert, hängt an der
+     * Ladereihenfolge der Pakete.
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        $this->app->make(SettingsRegistry::class)->register(Settings::class);
+    }
+
     public function bootAddon(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -96,6 +114,12 @@ class ServiceProvider extends AddonServiceProvider
                         Permission::make('view assessment responses')
                             ->label(__('assessments::messages.permission_responses')),
                     ]);
+
+                // Eigenes Recht, nicht als Kind von `view assessments`: wer
+                // Assessments ansehen darf, darf deshalb noch nicht die
+                // Betriebswerte des Addons verstellen.
+                Permission::register('manage assessments settings')
+                    ->label(__('assessments::settings.permission_manage'));
             });
         });
 
