@@ -8,6 +8,9 @@
 import { Head } from '@statamic/cms/inertia';
 import { EmptyStateItem, EmptyStateMenu, Icon } from '@statamic/cms/ui';
 
+// `fieldtype-table`, nicht `database`: statamic/cms v6 hat kein `database.svg`,
+// und <Icon> rendert einen unbekannten Namen als leeren Kasten, ohne Fehler.
+
 defineProps({
     title: { type: String, required: true },
     heading: { type: String, required: true },
@@ -23,13 +26,13 @@ defineProps({
         <!-- Centered heading, not <Header>: the empty-state form, per ui-vocabulary.md §2.7 (a). -->
         <header class="py-8 pt-16 text-center">
             <h1 class="text-[25px] font-medium antialiased flex justify-center items-center gap-2 sm:gap-3">
-                <Icon name="database" class="size-5 text-gray-500" />{{ title }}
+                <Icon name="fieldtype-table" class="size-5 text-gray-500" />{{ title }}
             </h1>
         </header>
 
         <EmptyStateMenu :heading="heading">
             <EmptyStateItem
-                icon="database"
+                icon="fieldtype-table"
                 :heading="tables.join(', ')"
                 :description="description"
             />
