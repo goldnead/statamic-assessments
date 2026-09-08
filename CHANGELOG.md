@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.0 — 2026-09-07
+
+### Neu: drei Werte ohne Dateizugriff änderbar
+
+Unter **Einstellungen → Addon-Einstellungen** steht ein Abschnitt für dieses Addon, mit zwei
+Gruppen:
+
+- **Darstellung:** das Antlers-Layout, in das die mitgelieferten Templates gehüllt werden
+  (fehlt die View, fällt das Addon weiter auf seine eigene schlichte Hülle zurück statt einen
+  Fehler zu zeigen), und ein Schalter für das mitgelieferte Stylesheet. Aus heißt dort: die
+  Templates binden es nicht mehr ein, Markup und Klassennamen bleiben, eigenes CSS greift
+  weiter.
+- **Nachbar-Addons:** ob die im Assessment erfasste Adresse als Kontakt an LeadHub geht. Aus
+  heißt, sie bleibt in diesem Addon.
+
+Gespeichert wird nur die Abweichung; alles Übrige folgt weiter `config/assessments.php`.
+
+Nicht auf der Seite: `routes.prefix` und `routes.throttle` werden beim Registrieren der Routen
+gelesen, `integrations.automations` beim Booten, und die Brücke merkt sich dabei, dass sie den
+Auslöser angemeldet hat. Ein späteres „aus" nähme ihn nicht wieder heraus, ein späteres „an"
+trüge ihn nicht nach. Beide Schlüssel bleiben in der Config, und die Gruppenbeschreibungen auf
+der Seite sagen das.
+
+**Neues Recht `manage assessments settings`.** Bis es einer Rolle zugewiesen ist, sieht es
+niemand, auch kein Benutzer, der an diesem Addon sonst alles darf. Bestehende Rechte sind
+unverändert.
+
+**Voraussetzung: `goldnead/statamic-brand-context` ab 1.13.** Unter älteren Fassungen ist die
+Seite da, ihre Werte aber nicht verlässlich: auf einer Installation mit einer einzigen Marke
+kamen die Einstellungen der zuletzt angemeldeten Addons überhaupt nicht an der Config an, und
+bis 1.12 löschte ein zweites Speichern desselben Abschnitts die Überschreibung des ersten,
+stillschweigend. Wer vor diesem Update schon Werte gesetzt hat, prüft nach dem Aktualisieren,
+ob sie noch dastehen.
+
 ## 0.1.1 — 2026-09-05
 
 The shipped bundle was older than the source it was meant to come from.
