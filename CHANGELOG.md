@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-09-08
+
+### Fixed: an unmigrated install no longer answers HTTP 500
+
+`/cp/assessments` and the responses screen used to die with `no such table: assessments` when
+the addon was installed but its migrations had never run. Both pages now show an empty state
+that names the missing tables and says to run `php artisan migrate`, and the reason is written
+to the log — the page stays quiet about nothing.
+
 ## 0.2.0 — 2026-09-07
 
 ### New: three values changeable without file access
