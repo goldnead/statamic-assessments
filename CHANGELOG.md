@@ -2,37 +2,33 @@
 
 ## 0.2.0 — 2026-09-07
 
-### Neu: drei Werte ohne Dateizugriff änderbar
+### New: three values changeable without file access
 
-Unter **Einstellungen → Addon-Einstellungen** steht ein Abschnitt für dieses Addon, mit zwei
-Gruppen:
+Under **Settings → Addon Settings** there is a section for this addon, with two groups:
 
-- **Darstellung:** das Antlers-Layout, in das die mitgelieferten Templates gehüllt werden
-  (fehlt die View, fällt das Addon weiter auf seine eigene schlichte Hülle zurück statt einen
-  Fehler zu zeigen), und ein Schalter für das mitgelieferte Stylesheet. Aus heißt dort: die
-  Templates binden es nicht mehr ein, Markup und Klassennamen bleiben, eigenes CSS greift
-  weiter.
-- **Nachbar-Addons:** ob die im Assessment erfasste Adresse als Kontakt an LeadHub geht. Aus
-  heißt, sie bleibt in diesem Addon.
+- **Presentation:** the Antlers layout the shipped templates are wrapped in (if the view is
+  missing, the addon still falls back to its own plain shell instead of showing an error), and
+  a switch for the shipped stylesheet. Off means the templates no longer include it; markup and
+  class names stay, your own CSS still applies.
+- **Neighbouring addons:** whether the address captured in the assessment goes to LeadHub as a
+  contact. Off means it stays inside this addon.
 
-Gespeichert wird nur die Abweichung; alles Übrige folgt weiter `config/assessments.php`.
+Only the deviation is stored; everything else still follows `config/assessments.php`.
 
-Nicht auf der Seite: `routes.prefix` und `routes.throttle` werden beim Registrieren der Routen
-gelesen, `integrations.automations` beim Booten, und die Brücke merkt sich dabei, dass sie den
-Auslöser angemeldet hat. Ein späteres „aus" nähme ihn nicht wieder heraus, ein späteres „an"
-trüge ihn nicht nach. Beide Schlüssel bleiben in der Config, und die Gruppenbeschreibungen auf
-der Seite sagen das.
+Not on the page: `routes.prefix` and `routes.throttle` are read while the routes are being
+registered, `integrations.automations` at boot, and the bridge remembers at that point that it
+has registered the trigger. A later "off" would not take it out again, a later "on" would not
+add it. Both keys stay in the config, and the group descriptions on the page say so.
 
-**Neues Recht `manage assessments settings`.** Bis es einer Rolle zugewiesen ist, sieht es
-niemand, auch kein Benutzer, der an diesem Addon sonst alles darf. Bestehende Rechte sind
-unverändert.
+**New permission `manage assessments settings`.** Until it is assigned to a role nobody sees
+it, not even a user who may do everything else in this addon. Existing permissions are
+unchanged.
 
-**Voraussetzung: `goldnead/statamic-brand-context` ab 1.13.** Unter älteren Fassungen ist die
-Seite da, ihre Werte aber nicht verlässlich: auf einer Installation mit einer einzigen Marke
-kamen die Einstellungen der zuletzt angemeldeten Addons überhaupt nicht an der Config an, und
-bis 1.12 löschte ein zweites Speichern desselben Abschnitts die Überschreibung des ersten,
-stillschweigend. Wer vor diesem Update schon Werte gesetzt hat, prüft nach dem Aktualisieren,
-ob sie noch dastehen.
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Under older versions the page is
+there, but its values are not reliable: on an installation with a single brand the settings of
+the addons registered last did not reach the config at all, and up to 1.12 a second save of the
+same section silently deleted the first save's override. If you set values before this update,
+check after updating whether they are still there.
 
 ## 0.1.1 — 2026-09-05
 
