@@ -5,6 +5,7 @@ namespace Goldnead\Assessments\Http\Controllers\Cp;
 use Goldnead\Assessments\AssessmentsManager;
 use Goldnead\Assessments\Models\Assessment;
 use Goldnead\Assessments\Models\Response;
+use Goldnead\Assessments\Support\Setup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -18,6 +19,10 @@ class ResponseController extends Controller
     public function index(Request $request, int $assessment)
     {
         $this->authorizeOrFail($request, 'view assessment responses');
+
+        if ($setup = Setup::guard(__('assessments::messages.nav'), 'assessments', 'assessment_questions', 'assessment_responses')) {
+            return $setup;
+        }
 
         $record = Assessment::query()->with('questions')->find($assessment);
         abort_if($record === null, 404);

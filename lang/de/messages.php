@@ -7,6 +7,10 @@ return [
     'permission_edit' => 'Assessments bearbeiten',
     'permission_responses' => 'Antworten ansehen',
 
+    // Was auf der Seite steht, wenn die Migrationen nie gelaufen sind.
+    'setup_required_heading' => 'Diese Seite braucht ihre Datenbanktabellen, und die gibt es noch nicht.',
+    'setup_required_description' => 'Führe `php artisan migrate` aus, danach lädt die Seite normal. Der Grund steht auch im Log.',
+
     'created' => 'Assessment angelegt.',
     'saved' => 'Assessment gespeichert.',
     'deleted' => 'Assessment gelöscht.',

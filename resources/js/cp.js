@@ -7,9 +7,11 @@
 import AssessmentsIndex from './pages/Assessments/Index.vue';
 import AssessmentsEdit from './pages/Assessments/Edit.vue';
 import AssessmentsResponses from './pages/Assessments/Responses.vue';
+import SetupRequired from './pages/SetupRequired.vue';
 
 Statamic.booting(() => {
     Statamic.$inertia.register('assessments::Assessments/Index', AssessmentsIndex);
     Statamic.$inertia.register('assessments::Assessments/Edit', AssessmentsEdit);
     Statamic.$inertia.register('assessments::Assessments/Responses', AssessmentsResponses);
+    Statamic.$inertia.register('assessments::SetupRequired', SetupRequired);
 });

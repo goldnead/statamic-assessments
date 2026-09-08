@@ -6,6 +6,7 @@ use Goldnead\Assessments\AssessmentsManager;
 use Goldnead\Assessments\Models\Assessment;
 use Goldnead\Assessments\Models\Question;
 use Goldnead\Assessments\Scoring\Levels;
+use Goldnead\Assessments\Support\Setup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -21,6 +22,11 @@ class AssessmentController extends Controller
     public function index(Request $request)
     {
         $this->authorizeOrFail($request, 'view assessments');
+
+        // Three tables, because the row count below joins all three.
+        if ($setup = Setup::guard(__('assessments::messages.nav'), 'assessments', 'assessment_questions', 'assessment_responses')) {
+            return $setup;
+        }
 
         $rows = Assessment::query()
             ->with('brand')
