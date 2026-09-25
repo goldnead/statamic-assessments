@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-09-25
+
+### Fixed
+
+- `lang/de.json` no longer translates Statamic's "Details", "Handle", "Required", "Options", "Min", "Max" and "Redirect" globally ("Required" read "Pflicht" in every blueprint). The editor uses keys under `assessments::cp`.
+
 ## 0.3.0 — 2026-09-08
 
 ### Fixed: an unmigrated install no longer answers HTTP 500

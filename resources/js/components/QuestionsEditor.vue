@@ -144,7 +144,7 @@ function error(index, key) {
                 </template>
 
                 <template v-else>
-                    <Field :label="__('Options')" :error="error(index, 'options')">
+                    <Field :label="__('assessments::cp.options')" :error="error(index, 'options')">
                         <div class="space-y-2">
                             <div
                                 v-for="(option, optionIndex) in question.options"

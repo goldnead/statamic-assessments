@@ -55,7 +55,7 @@ const formErrors = ref({});
 const nameOptions = computed(() => [
     { value: 'off', label: __('Not at all') },
     { value: 'optional', label: __('Optional') },
-    { value: 'required', label: __('Required') },
+    { value: 'required', label: __('assessments::cp.required') },
 ]);
 
 // The same arithmetic as Question::pointRange(), so what the editor shows is
@@ -179,7 +179,7 @@ function destroy() {
             data-assessments-form-errors
         />
 
-        <Panel :heading="__('Details')">
+        <Panel :heading="__('assessments::cp.details')">
             <Card>
                 <div class="space-y-4">
                     <Field :label="__('Title')" :error="formErrors.title" required>
@@ -188,14 +188,14 @@ function destroy() {
 
                     <Field
                         v-if="isCreating"
-                        :label="__('Handle')"
+                        :label="__('assessments::cp.handle')"
                         :error="formErrors.handle"
                         :instructions="__('Lowercase letters, numbers, dashes and underscores. This is the public address, unique across every brand. Leave empty to generate it from the title.')"
                     >
                         <Input v-model="handle" placeholder="stimm_check" />
                     </Field>
 
-                    <Field v-else :label="__('Handle')">
+                    <Field v-else :label="__('assessments::cp.handle')">
                         <Input :model-value="assessment.handle" read-only />
                     </Field>
 

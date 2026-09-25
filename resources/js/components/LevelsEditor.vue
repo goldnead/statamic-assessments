@@ -78,13 +78,13 @@ function error(index, key) {
                     <Field :label="__('Key')" :error="error(index, 'key')" class="sm:col-span-2" required>
                         <Input :model-value="level.key" placeholder="basis" @update:model-value="set(index, 'key', $event)" />
                     </Field>
-                    <Field :label="__('Min')" :error="error(index, 'min')">
+                    <Field :label="__('assessments::cp.min')" :error="error(index, 'min')">
                         <Input type="number" :model-value="level.min" @update:model-value="set(index, 'min', $event)" />
                     </Field>
-                    <Field :label="__('Max')" :error="error(index, 'max')">
+                    <Field :label="__('assessments::cp.max')" :error="error(index, 'max')">
                         <Input type="number" :model-value="level.max" @update:model-value="set(index, 'max', $event)" />
                     </Field>
-                    <Field :label="__('Redirect')" :error="error(index, 'redirect')" :instructions="__('Optional. Send visitors with this level to a URL instead of the result page.')" class="sm:col-span-2">
+                    <Field :label="__('assessments::cp.redirect')" :error="error(index, 'redirect')" :instructions="__('Optional. Send visitors with this level to a URL instead of the result page.')" class="sm:col-span-2">
                         <Input :model-value="level.redirect || ''" placeholder="https://…" @update:model-value="set(index, 'redirect', $event)" />
                     </Field>
                 </div>
