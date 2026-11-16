@@ -95,4 +95,43 @@ class SetupGuardTest extends TestCase
 
         $this->assertSame('assessments::Assessments/Index', $response->viewData('page')['component']);
     }
+
+    #[Test]
+    public function the_edit_page_shows_the_setup_screen_when_its_tables_are_missing(): void
+    {
+        $this->dropAddonTables();
+
+        $response = $this->actingAs($this->admin())
+            ->get(cp_route('assessments.edit', 1))
+            ->assertOk();
+
+        $this->assertSame('assessments::SetupRequired', $response->viewData('page')['component']);
+    }
+
+    #[Test]
+    public function the_export_is_guarded_too(): void
+    {
+        $this->dropAddonTables();
+
+        $this->actingAs($this->admin())
+            ->get(cp_route('assessments.responses.export', 1))
+            ->assertOk();
+    }
+
+    #[Test]
+    public function a_stranger_is_sent_to_the_login_and_never_sees_the_setup_screen(): void
+    {
+        $this->dropAddonTables();
+
+        $this->get(cp_route('assessments.edit', 1))
+            ->assertRedirect();
+    }
+
+    #[Test]
+    public function a_migrated_install_still_404s_an_unknown_assessment(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(cp_route('assessments.edit', 999))
+            ->assertNotFound();
+    }
 }
