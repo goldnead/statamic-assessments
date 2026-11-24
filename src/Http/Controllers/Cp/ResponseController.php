@@ -106,34 +106,34 @@ class ResponseController extends Controller
             // column of their own at the end rather than shifting answers
             // under the wrong heading.
             $columns = $this->columnKeys($record->questions->pluck('text')->all());
-            $extra = [];
 
             $responses = fn () => Response::query()
                 ->where('assessment_id', $record->id)
                 ->orderBy('created_at')
                 ->orderBy('id');
 
-            $responses()->chunk(200, function ($chunk) use ($record, &$columns, &$extra) {
+            $responses()->chunk(200, function ($chunk) use ($record, &$columns) {
                 foreach ($chunk as $response) {
                     $response->setRelation('assessment', $record);
 
                     foreach (array_keys($this->answersByColumn($response)) as $key) {
                         if (! in_array($key, $columns, true)) {
                             $columns[] = $key;
-                            $extra[] = $key;
                         }
                     }
                 }
             });
 
-            fputcsv($out, array_merge([
+            // The heading row is a row too: a question text starting with `=`
+            // is a formula in a spreadsheet just like a name is.
+            fputcsv($out, array_map([self::class, 'cell'], array_merge([
                 __('assessments::messages.column_email'),
                 __('assessments::messages.column_name'),
                 __('assessments::messages.column_date'),
                 __('assessments::messages.column_score'),
                 __('assessments::messages.column_level_key'),
                 __('assessments::messages.column_level'),
-            ], $columns), ';', '"', '\\');
+            ], $columns)), ';', '"', '\\');
 
             $responses()->chunk(200, function ($chunk) use ($out, $record, $levels, $columns) {
                 foreach ($chunk as $response) {
@@ -160,16 +160,24 @@ class ResponseController extends Controller
 
     /**
      * The answers of one response keyed by their question text; a text that
-     * occurs twice gets " (2)", " (3)" and so on, in order.
+     * occurs twice gets " (2)", " (3)" and so on, in order. Limit: the snapshot
+     * carries no question id, so two questions with the same text that were
+     * swapped later cannot be told apart.
      *
      * @return array<string, string>
      */
     protected function answersByColumn(Response $response): array
     {
         $readable = $this->assessments->readableAnswers($response);
-        $keys = $this->columnKeys(array_column($readable, 'question'));
+        $keys = $this->columnKeys(array_map(fn ($row) => (string) ($row['question'] ?? ''), array_values($readable)));
 
-        return array_combine($keys, array_column($readable, 'answer')) ?: [];
+        $answers = [];
+
+        foreach (array_values($readable) as $index => $row) {
+            $answers[$keys[$index]] = (string) ($row['answer'] ?? '');
+        }
+
+        return $answers;
     }
 
     /**

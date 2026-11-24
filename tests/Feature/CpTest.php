@@ -286,6 +286,35 @@ class CpTest extends TestCase
     }
 
     #[Test]
+    public function a_deleted_question_keeps_its_answers_in_a_column_of_its_own_and_headings_are_neutralised(): void
+    {
+        $assessment = $this->makeAssessment();
+        Assessments::submit($assessment, 'a@example.com', 'A', $this->validAnswers($assessment));
+
+        $q = $assessment->questions()->get();
+        Assessments::update($assessment, ['questions' => [
+            ['id' => $q[0]->id, 'text' => '=Neu', 'type' => 'single', 'options' => $q[0]->optionList()],
+            ['id' => $q[1]->id, 'text' => $q[1]->text, 'type' => 'multi', 'options' => $q[1]->optionList()],
+        ], 'scoring' => [['key' => 'alles', 'label' => 'Alles', 'min' => 0, 'max' => 5]]]);
+
+        $this->actingAsCpUser('reader@example.com', ['view assessments', 'view assessment responses']);
+
+        $body = ltrim($this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent(), "\xEF\xBB\xBF");
+        $rows = array_map(fn ($line) => str_getcsv($line, ';', '"', '\\'), array_values(array_filter(explode("\n", $body))));
+
+        // Heading formula neutralised; the renamed question and the deleted
+        // one each have their column, the answer sits under its own.
+        $this->assertContains("'=Neu", $rows[0]);
+        $this->assertContains('Wie oft singst du?', $rows[0]);
+        $this->assertContains('Wie sicher fühlst du dich in der Höhe?', $rows[0]);
+        $byHeader = array_combine($rows[0], $rows[1]);
+        $this->assertSame('Atmung, Register', $byHeader['Was übst du?']);
+        $this->assertSame('Täglich', $byHeader['Wie oft singst du?']);
+        $this->assertSame('5', $byHeader['Wie sicher fühlst du dich in der Höhe?']);
+        $this->assertSame('', $byHeader["'=Neu"]);
+    }
+
+    #[Test]
     public function the_csv_neutralises_cells_a_spreadsheet_would_execute(): void
     {
         $assessment = $this->makeAssessment();
