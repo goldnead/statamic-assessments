@@ -253,8 +253,36 @@ class CpTest extends TestCase
 
         $this->actingAsCpUser('reader@example.com', ['view assessments', 'view assessment responses']);
 
-        $this->assertStringContainsString(';15;weit;Weit;Täglich;"Atmung, Register";5', $this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent());
+        $this->assertStringContainsString(';15;weit;Weit;;Täglich;"Atmung, Register";5', $this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent());
         $this->get('/a/stimm_check/r/'.$response->visit_token)->assertOk()->assertSee('Täglich');
+    }
+
+    #[Test]
+    public function the_csv_puts_an_answer_under_its_own_question_after_the_questions_were_reordered(): void
+    {
+        $assessment = $this->makeAssessment();
+        Assessments::submit($assessment, 'a@example.com', 'A', $this->validAnswers($assessment));
+
+        // The editor moves "Was übst du?" to the front. The stored snapshot
+        // still lists the questions in the order the visitor saw them.
+        $q = $assessment->questions()->get();
+        Assessments::update($assessment, ['questions' => [
+            ['id' => $q[1]->id, 'text' => $q[1]->text, 'type' => 'multi', 'options' => $q[1]->optionList()],
+            ['id' => $q[0]->id, 'text' => $q[0]->text, 'type' => 'single', 'options' => $q[0]->optionList()],
+            ['id' => $q[2]->id, 'text' => $q[2]->text, 'type' => 'scale', 'min' => 1, 'max' => 5, 'points_per_step' => 2],
+        ]]);
+
+        $this->actingAsCpUser('reader@example.com', ['view assessments', 'view assessment responses']);
+
+        $rows = array_map(
+            fn ($line) => str_getcsv($line, ';', '"', '\\'),
+            array_values(array_filter(explode("\n", ltrim($this->get(cp_route('assessments.responses.export', $assessment->id))->streamedContent(), "\xEF\xBB\xBF")))),
+        );
+
+        $byHeader = array_combine($rows[0], $rows[1]);
+
+        $this->assertSame('Atmung, Register', $byHeader['Was übst du?']);
+        $this->assertSame('Täglich', $byHeader['Wie oft singst du?']);
     }
 
     #[Test]

@@ -97,6 +97,35 @@ class ResponseController extends Controller
 
             fwrite($out, "\xEF\xBB\xBF");
 
+            $levels = $record->levels();
+
+            // One column per question, found by its text and not by its
+            // position: a response keeps the snapshot of the questions as the
+            // visitor saw them, and the editor may have moved, replaced or
+            // deleted questions since. Questions that no longer exist get a
+            // column of their own at the end rather than shifting answers
+            // under the wrong heading.
+            $columns = $this->columnKeys($record->questions->pluck('text')->all());
+            $extra = [];
+
+            $responses = fn () => Response::query()
+                ->where('assessment_id', $record->id)
+                ->orderBy('created_at')
+                ->orderBy('id');
+
+            $responses()->chunk(200, function ($chunk) use ($record, &$columns, &$extra) {
+                foreach ($chunk as $response) {
+                    $response->setRelation('assessment', $record);
+
+                    foreach (array_keys($this->answersByColumn($response)) as $key) {
+                        if (! in_array($key, $columns, true)) {
+                            $columns[] = $key;
+                            $extra[] = $key;
+                        }
+                    }
+                }
+            });
+
             fputcsv($out, array_merge([
                 __('assessments::messages.column_email'),
                 __('assessments::messages.column_name'),
@@ -104,35 +133,60 @@ class ResponseController extends Controller
                 __('assessments::messages.column_score'),
                 __('assessments::messages.column_level_key'),
                 __('assessments::messages.column_level'),
-            ], $record->questions->pluck('text')->all()), ';', '"', '\\');
+            ], $columns), ';', '"', '\\');
 
-            $levels = $record->levels();
+            $responses()->chunk(200, function ($chunk) use ($out, $record, $levels, $columns) {
+                foreach ($chunk as $response) {
+                    $response->setRelation('assessment', $record);
 
-            Response::query()
-                ->where('assessment_id', $record->id)
-                ->orderBy('created_at')
-                ->orderBy('id')
-                ->chunk(200, function ($responses) use ($out, $record, $levels) {
-                    foreach ($responses as $response) {
-                        $response->setRelation('assessment', $record);
+                    $answers = $this->answersByColumn($response);
 
-                        $answers = array_column($this->assessments->readableAnswers($response), 'answer');
-
-                        fputcsv($out, array_map([self::class, 'cell'], array_merge([
-                            $response->email,
-                            $response->name,
-                            $response->created_at?->toDateTimeString(),
-                            $response->score,
-                            $response->result_key,
-                            $response->result_key ? ($levels->byKey($response->result_key)['label'] ?? '') : '',
-                        ], $answers)), ';', '"', '\\');
-                    }
-                });
+                    fputcsv($out, array_map([self::class, 'cell'], array_merge([
+                        $response->email,
+                        $response->name,
+                        $response->created_at?->toDateTimeString(),
+                        $response->score,
+                        $response->result_key,
+                        $response->result_key ? ($levels->byKey($response->result_key)['label'] ?? '') : '',
+                    ], array_map(fn ($key) => $answers[$key] ?? '', $columns))), ';', '"', '\\');
+                }
+            });
 
             fclose($out);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * The answers of one response keyed by their question text; a text that
+     * occurs twice gets " (2)", " (3)" and so on, in order.
+     *
+     * @return array<string, string>
+     */
+    protected function answersByColumn(Response $response): array
+    {
+        $readable = $this->assessments->readableAnswers($response);
+        $keys = $this->columnKeys(array_column($readable, 'question'));
+
+        return array_combine($keys, array_column($readable, 'answer')) ?: [];
+    }
+
+    /**
+     * @param  list<string>  $texts
+     * @return list<string>
+     */
+    protected function columnKeys(array $texts): array
+    {
+        $seen = [];
+        $keys = [];
+
+        foreach ($texts as $text) {
+            $seen[$text] = ($seen[$text] ?? 0) + 1;
+            $keys[] = $seen[$text] > 1 ? $text.' ('.$seen[$text].')' : $text;
+        }
+
+        return $keys;
     }
 
     /**
