@@ -12,7 +12,10 @@ use Goldnead\Assessments\Tests\TestCase;
 use Goldnead\Leadhub\Facades\LeadHub;
 use Goldnead\StatamicAutomations\Engine\TriggerDispatcher;
 use Goldnead\StatamicAutomations\Facades\Automations;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 
 /**
  * The two bridges, against stand-ins of the siblings.
@@ -29,6 +32,8 @@ class IntegrationsTest extends TestCase
         require_once __DIR__.'/../Fakes/automations-contracts.php';
 
         LeadHub::$ingested = [];
+        LeadHub::$fails = null;
+        LeadHub::$withoutIngest = false;
         Automations::$registered = [];
         TriggerDispatcher::$dispatched = [];
 
@@ -72,6 +77,41 @@ class IntegrationsTest extends TestCase
 
         // The contact the sibling reported lands on the response.
         $this->assertSame(4711, $response->fresh()->contact_id);
+    }
+
+    #[Test]
+    public function a_failed_leadhub_handover_is_logged_by_response_id_and_reported_and_the_response_is_kept(): void
+    {
+        Exceptions::fake();
+        Log::spy();
+        LeadHub::$fails = new RuntimeException('sibling down');
+
+        $response = $this->complete();
+
+        $this->assertNotNull($response->fresh());
+        $this->assertNull($response->fresh()->contact_id);
+
+        Log::shouldHaveReceived('warning')
+            ->withArgs(fn (string $message, array $context) => $context['response'] === $response->getKey()
+                && $context['exception'] === RuntimeException::class
+                && ! str_contains(json_encode($context), 'sing@example.com'))
+            ->once();
+
+        Exceptions::assertReported(RuntimeException::class);
+    }
+
+    #[Test]
+    public function a_switched_on_leadhub_without_ingest_is_logged_once_and_stays_unavailable(): void
+    {
+        Log::spy();
+        LeadHub::$withoutIngest = true;
+
+        $bridge = app(LeadHubBridge::class);
+
+        $this->assertFalse($bridge->available());
+        $this->assertFalse($bridge->available());
+
+        Log::shouldHaveReceived('info')->once();
     }
 
     #[Test]

@@ -13,12 +13,26 @@ namespace Goldnead\Leadhub\Facades {
             /** @var list<array<string, mixed>> */
             public static array $ingested = [];
 
+            /** Makes ingest() throw, as a sibling that failed would. */
+            public static ?\Throwable $fails = null;
+
+            /** The facade root has no ingest() method, as an older sibling. */
+            public static bool $withoutIngest = false;
+
             public static function getFacadeRoot(): object
             {
+                if (LeadHub::$withoutIngest) {
+                    return new \stdClass;
+                }
+
                 return new class
                 {
                     public function ingest(array $event): ?object
                     {
+                        if (LeadHub::$fails !== null) {
+                            throw LeadHub::$fails;
+                        }
+
                         LeadHub::$ingested[] = $event;
 
                         return (object) ['id' => count(LeadHub::$ingested), 'contact_id' => 4711];

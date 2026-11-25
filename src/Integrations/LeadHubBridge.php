@@ -26,6 +26,9 @@ class LeadHubBridge
 
     public const EVENT_TYPE = 'assessment.completed';
 
+    /** Set once the switch is on but the sibling is missing; logged once per process. */
+    protected bool $unavailableLogged = false;
+
     public function __construct(protected AssessmentsManager $assessments) {}
 
     public function available(): bool
@@ -37,16 +40,35 @@ class LeadHubBridge
         $facade = self::FACADE;
 
         if (! class_exists($facade)) {
-            return false;
+            return $this->unavailable('the goldnead/statamic-leadhub package is not installed');
         }
 
         try {
             $root = $facade::getFacadeRoot();
         } catch (Throwable) {
-            return false;
+            return $this->unavailable('the LeadHub facade does not resolve');
         }
 
-        return is_object($root) && method_exists($root, 'ingest');
+        if (is_object($root) && method_exists($root, 'ingest')) {
+            return true;
+        }
+
+        return $this->unavailable('the LeadHub facade has no ingest() method');
+    }
+
+    /**
+     * The switch is on, so the site expects the handover, and it cannot happen.
+     * Logged once, not per call: `available()` runs on every submit.
+     */
+    protected function unavailable(string $reason): bool
+    {
+        if (! $this->unavailableLogged) {
+            $this->unavailableLogged = true;
+
+            Log::info('statamic-assessments: LeadHub handover is switched on but unavailable; responses are stored without a contact. '.$reason.'.');
+        }
+
+        return false;
     }
 
     /**
@@ -97,10 +119,15 @@ class LeadHubBridge
                 $response->forceFill(['contact_id' => (int) $contactId])->saveQuietly();
             }
         } catch (Throwable $e) {
+            // Logged with the response id only (no address), and reported so
+            // the error tracker sees it. No retry: a second ingest could
+            // duplicate the event on the sibling's side.
             Log::warning('statamic-assessments: handing the response to LeadHub failed; the response is stored.', [
                 'response' => $response->getKey(),
-                'exception' => $e->getMessage(),
+                'exception' => $e::class,
             ]);
+
+            report($e);
         }
     }
 }
