@@ -124,7 +124,7 @@ class LeadHubBridge
             // duplicate the event on the sibling's side.
             Log::warning('statamic-assessments: handing the response to LeadHub failed; the response is stored.', [
                 'response' => $response->getKey(),
-                'exception' => $e->getMessage(),
+                'exception' => $e::class,
             ]);
 
             report($e);

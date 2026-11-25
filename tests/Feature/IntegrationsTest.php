@@ -93,7 +93,7 @@ class IntegrationsTest extends TestCase
 
         Log::shouldHaveReceived('warning')
             ->withArgs(fn (string $message, array $context) => $context['response'] === $response->getKey()
-                && $context['exception'] === 'sibling down'
+                && $context['exception'] === RuntimeException::class
                 && ! str_contains(json_encode($context), 'sing@example.com'))
             ->once();
 
