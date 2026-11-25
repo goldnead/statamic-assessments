@@ -65,7 +65,7 @@ class LeadHubBridge
         if (! $this->unavailableLogged) {
             $this->unavailableLogged = true;
 
-            Log::warning('statamic-assessments: LeadHub handover is switched on but unavailable; responses are stored without a contact. '.$reason.'.');
+            Log::info('statamic-assessments: LeadHub handover is switched on but unavailable; responses are stored without a contact. '.$reason.'.');
         }
 
         return false;

@@ -111,7 +111,7 @@ class IntegrationsTest extends TestCase
         $this->assertFalse($bridge->available());
         $this->assertFalse($bridge->available());
 
-        Log::shouldHaveReceived('warning')->once();
+        Log::shouldHaveReceived('info')->once();
     }
 
     #[Test]
