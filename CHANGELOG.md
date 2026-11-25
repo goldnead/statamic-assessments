@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.4 — 2026-11-25
+
+### Fixed
+
+- **CSV export puts every answer under its own question.** The header came from the current questions while the cells came from the snapshot taken at submission, both by position, so reordering, inserting or deleting a question after answers had arrived shifted answers under the wrong column. There is now one column per question text (duplicate texts become "Text (2)"); questions that no longer exist get a column of their own at the end.
+- A failed hand-over to LeadHub is reported with `report()` and still logged with the response id (no address); the answer stays saved and nothing is retried, so no event is sent twice. With the switch on but LeadHub missing or without `ingest()`, one info-level line per process says so.
+
+### Upgrading
+
+- The export layout changes only if questions were changed after answers came in (extra columns at the end, empty cells). Scripts that read the file by position should read by header. No migration, no new config key.
+
 ## 0.3.3 — 2026-11-16
 
 ### Fixed
